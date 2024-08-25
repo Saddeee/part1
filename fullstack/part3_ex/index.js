@@ -1,86 +1,112 @@
+require("dotenv").config();
 const express = require("express");
-const app = express();
-let persons = [
-  {
-    id: 1,
-    name: "Arto Hellas",
-    number: "040-123456",
-  },
-  {
-    id: 2,
-    name: "Ada Lovelace",
-    number: "39-44-5323523",
-  },
-  {
-    id: 3,
-    name: "Dan Abramov",
-    number: "12-43-234345",
-  },
-  {
-    id: 4,
-    name: "Mary Poppendieck",
-    number: "39-23-6423122",
-  },
-];
 const cors = require("cors");
-app.use(cors());
+const Person = require("./modules/person");
+const app = express();
 
-app.use(requestLogger);
-app.use(express.json());
 const requestLogger = (request, response, next) => {
   console.log("Method:", request.method);
   console.log("Path:  ", request.path);
   console.log("Body:  ", request.body);
   console.log("---");
   next();
-  app.get("/api/persons", (request, response) => {
-    response.json(persons);
-  });
-  app.get("/info", (request, response) => {
-    const date = new Date();
-    const num = persons.length;
-    response.send(`<p> Phonebook has info for ${num}</p>
-    <p>${date} `);
-  });
 };
 
+app.use(cors());
+app.use(express.json());
+app.use(requestLogger);
+
+app.get("/api/persons", (request, response) => {
+  Person.find({}).then((persons) => {
+    response.json(persons);
+  });
+});
+app.get("/info", (request, response, next) => {
+  Person.find({})
+    .then((persons) => {
+      let num = 0;
+      const date = new Date();
+      num = persons.length;
+      response.send(`<p> Phonebook has info for ${num}</p>
+      <p>${date}</p> `);
+    })
+    .catch((error) => next(error));
+});
+
 app.get("/api/persons/:id", (request, response) => {
-  const id = Number(request.params.id);
-  per = persons.find((p) => p.id === id);
+  Person.findById(request.params.id)
+    .then((person) => {
+      if (person) {
+        response.json(person);
+      } else {
+        response.status(404).end();
+      }
+    })
+    .catch((error) => next(error));
+});
 
-  if (per) {
-    response.json(per);
-  } else {
-    return response.status(404).end();
+app.put("/api/persons/:id",(request,response,next)=>{
+  const body = request.body
+  const person={
+    name:body.name,
+    number:body.number
   }
-});
-app.delete("/api/persons/:id", (request, response) => {
-  const id = Number(request.params.id);
-  persons = persons.filter((p) => p.id !== id);
-  console.log(persons);
-  response.status(204).end();
+  Person.findByIdAndUpdate(request.params.id,person,{new:true, runValidators:true, context:"query"}).then(
+    updatedPerson=>{
+      response.json(updatedNote)
+    }
+  ).catch(error=>next(error))
+})
+
+app.delete("/api/persons/:id", (request, response, next) => {
+  Person.findByIdAndDelete(request.params.id)
+    .then((result) => {
+      response.status(204).end();
+    })
+    .catch((error) => {
+      next(error);
+    });
 });
 
-app.post("/api/persons", (request, response) => {
+app.post("/api/persons", (request, response,next) => {
   const body = request.body;
-  const findperson = persons.find((p) => p.name === String(body.name));
+
   if (!body.name || !body.number) {
-    return response
-      .status(400)
-      .json({ error: "Either you havent added name or number" });
-  }
-  if (findperson) {
-    return response.status(400).json({ error: "name must be unique" });
+    return response.status(400).json({ error: 'Name or number is missing' });
   }
 
-  const person = {
+  const person = new Person({
     name: body.name,
     number: body.number,
-    id: Math.random(1000000000),
-  };
-  persons = persons.concat(person);
-  response.json(persons);
+  });
+
+  person.save()
+    .then((savedPerson) => {
+      response.json(savedPerson);
+    }).catch((error) => {next(error)
+    });
 });
+
+
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: "unknown endpoint" });
+};
+
+app.use(unknownEndpoint);
+
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message);
+
+  if (error.name === "CastError") {
+    return response.status(400).send({ error: "malformatted id" });
+  }else if(error.name === "ValidationError"){
+    return response.status(400).send({ error: error.message });
+  }
+
+  next(error);
+};
+
+app.use(errorHandler);
 const PORT = 3001;
 app.listen(PORT);
 console.log(`we are listening at ${PORT}`);

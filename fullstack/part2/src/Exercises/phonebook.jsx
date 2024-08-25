@@ -1,6 +1,4 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
-import Note from "../components/Note";
 import Filter from "./Componentss/Filter";
 import PersonForm from "./Componentss/PeronForm";
 import Persons from "./Componentss/Persons";
@@ -83,18 +81,18 @@ const App = () => {
     }
     noteService
       .create(nameObject)
-      .then((data) => {
-        setPersons(persons.concat(data));
+      .then((response) => {
+        setPersons(persons.concat(response));
         setName("");
         setGoodOrBad(true)
         setMessage("Added " + nameObject.name + " successfully");
         setTimeout(() => {
           setMessage(null);
         }, 4000);
-      })
-      .catch((error) => {
+      }).catch((error) => {
         setGoodOrBad(false)
-        setMessage(error);
+        console.log('Error:', error.response);
+        setMessage(error.response.data.error);
         setTimeout(() => {
           setMessage(null);
         }, 3000);
@@ -114,7 +112,7 @@ const App = () => {
         })
         .catch((error) => {
           setGoodOrBad(false);
-          setMessage(copyObj.name + " is already removed");
+          setMessage(lookforperson.name + " is already removed");
           setTimeout(() => {
             setMessage(null);
           }, 5000);

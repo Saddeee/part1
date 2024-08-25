@@ -1,0 +1,5 @@
+part3_ex/node_modules
+*.json
+backend-py/__pycache__
+backend-py/Books_rpc/__pycache__
+backend-py/weather_notification/__pycache__
