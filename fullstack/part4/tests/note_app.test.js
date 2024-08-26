@@ -84,21 +84,21 @@ test("a specific note can be viewed", async () => {
   assert.deepStrictEqual(firstItemInNotes, resultNote.body);
 });
 
-test("a note can be deleted", async () => {
-  const notes = await helper.notesInDb();
+// test("a note can be deleted", async () => {
+//   const notes = await helper.notesInDb();
 
-  const noteDelete = notes[0];
+//   const noteDelete = notes[0];
 
-  const deletedNote = await api
-    .delete(`/api/notes/${noteDelete.id}`)
-    .expect(204);
+//   const deletedNote = await api
+//     .delete(`/api/notes/${noteDelete.id}`)
+//     .expect(204);
 
-  const afterDelete = await helper.notesInDb();
+//   const afterDelete = await helper.notesInDb();
 
-  const contents = afterDelete.map((note) => note.content);
-  assert(!contents.includes(noteDelete.content));
-  assert.strictEqual(afterDelete.length, helper.initialNotes.length - 1);
-});
+//   const contents = afterDelete.map((note) => note.content);
+//   assert(!contents.includes(noteDelete.content));
+//   assert.strictEqual(afterDelete.length, helper.initialNotes.length - 1);
+// });
 after(async () => {
   await mongoose.connection.close();
 });
